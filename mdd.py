@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 # SPDX-FileCopyrightText: 2024 Roman Gilg <romangg@manjaro.org>
+# SPDX-FileCopyrightText: 2024 Frede Hundewadt <fh@manjaro.org>
 # SPDX-License-Identifier: MIT
 import os
 import sys
@@ -23,10 +24,17 @@ import distro
 from datetime import datetime
 from dateutil import parser as date_parser
 
-from PySide6.QtCore import (QRect, QSize, Qt)
-from PySide6.QtGui import (QFont, )
-from PySide6.QtWidgets import (QCheckBox, QDialogButtonBox, QLabel, QPlainTextEdit, QRadioButton, QSizePolicy,
-                               QVBoxLayout, QWidget)
+from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
+    QMetaObject, QObject, QPoint, QRect,
+    QSize, QTime, QUrl, Qt)
+from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
+    QFont, QFontDatabase, QGradient, QIcon,
+    QImage, QKeySequence, QLinearGradient, QPainter,
+    QPalette, QPixmap, QRadialGradient, QTransform)
+from PySide6.QtWidgets import (QAbstractButton, QAbstractScrollArea, QApplication, QCheckBox,
+    QDialog, QDialogButtonBox, QLabel, QRadioButton,
+    QSizePolicy, QTextBrowser, QPlainTextEdit, QTextEdit, QVBoxLayout,
+    QWidget)
 from PySide6 import QtCore, QtWidgets
 
 inxi = None
@@ -46,127 +54,136 @@ class MDD(QtWidgets.QWidget):
         super().__init__()
         self.config_modified = False
         self.setWindowTitle("MDD - The Manjaro Data Donor")
-        self.resize(500, 650)
-        size_policy = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        size_policy.setHorizontalStretch(0)
-        size_policy.setVerticalStretch(0)
-        size_policy.setHeightForWidth(self.sizePolicy().hasHeightForWidth())
-        self.setSizePolicy(size_policy)
-        self.setMinimumSize(QSize(500, 650))
-        self.setMaximumSize(QSize(500, 650))
-        # self.setSizeGripEnabled(False)
+        self.resize(500, 600)
+        sizePolicy = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.sizePolicy().hasHeightForWidth())
+        self.setSizePolicy(sizePolicy)
         self.buttonBox = QDialogButtonBox(self)
         self.buttonBox.setObjectName(u"buttonBox")
-        self.buttonBox.setGeometry(QRect(250, 600, 240, 32))
+        self.buttonBox.setGeometry(QRect(150, 560, 341, 32))
         self.buttonBox.setOrientation(Qt.Orientation.Horizontal)
-        self.buttonBox.setStandardButtons(QDialogButtonBox.StandardButton.Cancel | QDialogButtonBox.StandardButton.Ok)
-        self.previewSysInfo = QPlainTextEdit(self)
-        self.previewSysInfo.setObjectName(u"previewSysInfo")
-        self.previewSysInfo.setGeometry(QRect(10, 10, 480, 410))
+        self.buttonBox.setStandardButtons(QDialogButtonBox.StandardButton.Cancel|QDialogButtonBox.StandardButton.Ok)
+
+        self.previewDonation = QPlainTextEdit(self)
+        self.previewDonation.setObjectName(u"previewDonation")
+        self.previewDonation.setGeometry(QRect(10, 10, 480, 380))
         font = QFont()
         font.setFamilies([u"Monospace"])
-        font.setPointSize(9)
-        self.previewSysInfo.setFont(font)
-        # self.previewSysInfo.setStyleSheet(u"background-color: rgb(226, 226, 226);\n"
-        #                                   "color: rgb(0, 0, 0);")
-        self.previewSysInfo.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
-        self.labelTimerOptions = QLabel(self)
-        self.labelTimerOptions.setObjectName(u"labelTimerOptions")
-        self.labelTimerOptions.setGeometry(QRect(270, 440, 200, 25))
-        self.labelServiceOptions = QLabel(self)
-        self.labelServiceOptions.setObjectName(u"labelServiceOptions")
-        self.labelServiceOptions.setGeometry(QRect(20, 440, 200, 25))
-        self.widgetLayoutTimerConfig = QWidget(self)
-        self.widgetLayoutTimerConfig.setObjectName(u"widgetLayoutTimerConfig")
-        self.widgetLayoutTimerConfig.setGeometry(QRect(260, 460, 231, 121))
-        self.layoutTimerConfig = QVBoxLayout(self.widgetLayoutTimerConfig)
-        self.layoutTimerConfig.setObjectName(u"layoutTimerConfig")
-        self.layoutTimerConfig.setContentsMargins(10, 10, 0, 0)
-        self.optionWeekly = QRadioButton(self.widgetLayoutTimerConfig)
+        self.previewDonation.setFont(font)
+        self.previewDonation.setAcceptDrops(False)
+        self.previewDonation.setSizeAdjustPolicy(QAbstractScrollArea.SizeAdjustPolicy.AdjustToContentsOnFirstShow)
+        self.previewDonation.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
+
+        self.widgetConfigTimer = QWidget(self)
+        self.widgetConfigTimer.setObjectName(u"widgetConfigTimer")
+        self.widgetConfigTimer.setGeometry(QRect(10, 430, 220, 140))
+        self.layoutConfigTimer = QVBoxLayout(self.widgetConfigTimer)
+        self.layoutConfigTimer.setObjectName(u"layoutConfigTimer")
+        self.layoutConfigTimer.setContentsMargins(10, 10, 10, 10)
+        self.optionDaily = QRadioButton(self.widgetConfigTimer)
+        self.optionDaily.setObjectName(u"optionDaily")
+
+        self.layoutConfigTimer.addWidget(self.optionDaily)
+
+        self.optionWeekly = QRadioButton(self.widgetConfigTimer)
         self.optionWeekly.setObjectName(u"optionWeekly")
-        self.optionWeekly.setChecked(True)
 
-        self.layoutTimerConfig.addWidget(self.optionWeekly)
+        self.layoutConfigTimer.addWidget(self.optionWeekly)
 
-        self.optionBiWeekly = QRadioButton(self.widgetLayoutTimerConfig)
-        self.optionBiWeekly.setObjectName(u"optionBiWeekly")
+        self.optionBiweekly = QRadioButton(self.widgetConfigTimer)
+        self.optionBiweekly.setObjectName(u"optionBiweekly")
 
-        self.layoutTimerConfig.addWidget(self.optionBiWeekly)
+        self.layoutConfigTimer.addWidget(self.optionBiweekly)
 
-        self.optionMonthly = QRadioButton(self.widgetLayoutTimerConfig)
+        self.optionMonthly = QRadioButton(self.widgetConfigTimer)
         self.optionMonthly.setObjectName(u"optionMonthly")
 
-        self.layoutTimerConfig.addWidget(self.optionMonthly)
+        self.layoutConfigTimer.addWidget(self.optionMonthly)
 
-        self.checkEnableTimer = QCheckBox(self.widgetLayoutTimerConfig)
-        self.checkEnableTimer.setObjectName(u"checkEnableTimer")
+        self.widgetConfigData = QWidget(self)
+        self.widgetConfigData.setObjectName(u"widgetConfigData")
+        self.widgetConfigData.setGeometry(QRect(290, 430, 200, 80))
+        self.layoutConfigData = QVBoxLayout(self.widgetConfigData)
+        self.layoutConfigData.setObjectName(u"layoutConfigData")
+        self.layoutConfigData.setContentsMargins(10, 10, 10, 10)
+        self.optionBasic = QRadioButton(self.widgetConfigData)
+        self.optionBasic.setObjectName(u"optionBasic")
 
-        self.layoutTimerConfig.addWidget(self.checkEnableTimer)
+        self.layoutConfigData.addWidget(self.optionBasic)
 
-        self.widgetDataConfig = QWidget(self)
-        self.widgetDataConfig.setObjectName(u"widgetDataConfig")
-        self.widgetDataConfig.setGeometry(QRect(10, 460, 231, 71))
-        self.layoutDataConfig = QVBoxLayout(self.widgetDataConfig)
-        self.layoutDataConfig.setObjectName(u"layoutDataConfig")
-        self.layoutDataConfig.setContentsMargins(10, 10, 0, 0)
-        self.optionSystemInfo = QRadioButton(self.widgetDataConfig)
-        self.optionSystemInfo.setObjectName(u"optionSystemInfo")
-        self.optionSystemInfo.setChecked(True)
+        self.optionFull = QRadioButton(self.widgetConfigData)
+        self.optionFull.setObjectName(u"optionFull")
 
-        self.layoutDataConfig.addWidget(self.optionSystemInfo)
+        self.layoutConfigData.addWidget(self.optionFull)
 
-        self.optionSystemPing = QRadioButton(self.widgetDataConfig)
-        self.optionSystemPing.setObjectName(u"optionSystemPing")
-
-        self.layoutDataConfig.addWidget(self.optionSystemPing)
-
+        self.checkRegular = QCheckBox(self)
+        self.checkRegular.setObjectName(u"checkRegular")
+        self.checkRegular.setGeometry(QRect(300, 520, 190, 23))
+        self.labelTimerOptions = QLabel(self)
+        self.labelTimerOptions.setObjectName(u"labelTimerOptions")
+        self.labelTimerOptions.setGeometry(QRect(10, 400, 200, 19))
+        self.labelServiceOptions = QLabel(self)
+        self.labelServiceOptions.setObjectName(u"labelServiceOptions")
+        self.labelServiceOptions.setGeometry(QRect(290, 400, 200, 19))
         # set text (this is candidate for translation
-        self.checkEnableTimer.setText(u"Enable Timer")
+        self.checkRegular.setText(u"Enable Timer")
+        self.optionDaily.setText(u"Daily")
         self.optionWeekly.setText(u"Weekly")
-        self.optionBiWeekly.setText(u"Biweek&ly")
+        self.optionBiweekly.setText(u"Biweek&ly")
         self.optionMonthly.setText(u"Mon&thly")
         self.labelTimerOptions.setText(
             u"<html><head/><body><p><span style=\" font-size:11pt; font-weight:700;\">Donate Timer</span></p></body></html>")
-        self.optionSystemInfo.setText(u"S&ystem Info")
+        self.optionFull.setText(u"S&ystem Info")
         self.labelServiceOptions.setText(
             u"<html><head/><body><p><span style=\" font-size:11pt; font-weight:700;\">Donate Info</span></p></body></html>")
-        self.optionSystemPing.setText(u"&Basic Ping")
+        self.optionBasic.setText(u"&Basic Ping")
 
         self.buttonBox.accepted.connect(self.accepted)
         self.buttonBox.rejected.connect(self.rejected)
-        self.checkEnableTimer.clicked.connect(self.enable_service)
-        self.optionBiWeekly.clicked.connect(self.opt_biweekly_set)
+        self.checkRegular.clicked.connect(self.enable_service)
+        self.optionBiweekly.clicked.connect(self.opt_biweekly_set)
+        self.optionDaily.clicked.connect(self.opt_daily_set)
         self.optionMonthly.clicked.connect(self.opt_monthly_set)
-        self.optionSystemPing.clicked.connect(self.opt_system_ping_set)
-        self.optionSystemInfo.clicked.connect(self.opt_system_info_set)
+        self.optionBasic.clicked.connect(self.opt_system_ping_set)
+        self.optionFull.clicked.connect(self.opt_system_info_set)
         self.optionWeekly.clicked.connect(self.opt_weekly_set)
 
         self.sysdata = get_device_data(config["telemetry"])
-        self.previewSysInfo.setPlainText(json_beaut(self.sysdata, indent=2))
+        self.previewDonation.setPlainText(json_beaut(self.sysdata, indent=2))
 
     def set_config(self, new_config):
         config.update(new_config)
         self.config_modified = True
+        if config["schedule"] == "1d":
+            self.optionWeekly.setChecked(True)
         if config["schedule"] == "1w":
             self.optionWeekly.setChecked(True)
         if config["schedule"] == "2w":
-            self.optionBiWeekly.setChecked(True)
+            self.optionBiweekly.setChecked(True)
         if config["schedule"] == "4w":
             self.optionMonthly.setChecked(True)
         if config["enabled"]:
-            self.checkEnableTimer.setChecked(True)
+            self.checkRegular.setChecked(True)
 
-        self.previewSysInfo.setPlainText("Stand by... working")
-        self.previewSysInfo.repaint()
-        self.optionSystemPing.setChecked(not config["telemetry"])
-        self.optionSystemInfo.setChecked(config["telemetry"])
+        self.previewDonation.setPlainText("Stand by... working")
+        self.previewDonation.repaint()
+        self.optionBasic.setChecked(not config["telemetry"])
+        self.optionFull.setChecked(config["telemetry"])
 
         self.sysdata = get_device_data(new_config)
-        self.previewSysInfo.setPlainText(json_beaut(self.sysdata, indent=2))
+        self.previewDonation.setPlainText(json_beaut(self.sysdata, indent=2))
 
     @staticmethod
     def rejected():
         exit()
+
+    @QtCore.Slot()
+    def opt_daily_set(self):
+        config["schedule"] = "1d"
+        generate_service_files()
+        self.config_modified = True
 
     @QtCore.Slot()
     def opt_weekly_set(self):
@@ -188,7 +205,7 @@ class MDD(QtWidgets.QWidget):
 
     @QtCore.Slot()
     def enable_service(self):
-        config["enabled"] = self.checkEnableTimer.isChecked()
+        config["enabled"] = self.checkRegular.isChecked()
         set_timer_state(config["enabled"])
         self.config_modified = True
 
@@ -202,26 +219,26 @@ class MDD(QtWidgets.QWidget):
 
     @QtCore.Slot()
     def opt_system_ping_set(self):
+        self.previewDonation.clear()
+        self.previewDonation.setPlainText("Stand by... working")
+        self.previewDonation.repaint()
         config["telemetry"] = False
         self.config_modified = True
-        self.previewSysInfo.clear()
-        self.previewSysInfo.setPlainText("Stand by... working")
-        self.previewSysInfo.repaint()
         self.sysdata = get_device_data(config["telemetry"])
-        self.previewSysInfo.clear()
-        self.previewSysInfo.setPlainText(json_beaut(self.sysdata, indent=2))
+        self.previewDonation.clear()
+        self.previewDonation.setPlainText(json_beaut(self.sysdata, indent=2))
         generate_service_files()
 
     @QtCore.Slot()
     def opt_system_info_set(self):
+        self.previewDonation.clear()
+        self.previewDonation.setPlainText("Stand by... working")
+        self.previewDonation.repaint()
         config["telemetry"] = True
         self.config_modified = True
-        self.previewSysInfo.clear()
-        self.previewSysInfo.setPlainText("Stand by... working")
-        self.previewSysInfo.repaint()
         self.sysdata = get_device_data(config["telemetry"])
-        self.previewSysInfo.clear()
-        self.previewSysInfo.setPlainText(json_beaut(self.sysdata, indent=2))
+        self.previewDonation.clear()
+        self.previewDonation.setPlainText(json_beaut(self.sysdata, indent=2))
         generate_service_files()
 
 
@@ -245,9 +262,7 @@ def generate_service_files():
                        f"After=network-online.target default.target\n\n" \
                        f"[Service]\n" \
                        f"Type=oneshot\n" \
-                       f"ExecStart=/usr/bin/mdd {disable_telemetry}\n\n" \
-                       f"[Install]\n" \
-                       f"WantedBy=default.target\n"
+                       f"ExecStart=/usr/bin/mdd {disable_telemetry}\n\n"
     # write user service unit
     with open(f"{service_path}/self.service", "w") as f:
         f.write(service_template)
@@ -296,8 +311,8 @@ def http_post_info(sys_info) -> bool:
         return False
 
 
-def json_beaut(input, sort_keys=False, indent=4):
-    return json.dumps(input, indent=indent, sort_keys=sort_keys)
+def json_beaut(donor_data, sort_keys=False, indent=4):
+    return json.dumps(donor_data, indent=indent, sort_keys=sort_keys)
 
 
 def prepare_inxi():
@@ -557,10 +572,10 @@ def get_cpu_info():
     cpu_model = ""
     cpu_model2 = ""
 
-    def write_cpu_model(val):
+    def write_cpu_model(cpu_data):
         nonlocal cpu_model
-        if val not in (None, "", "N/A"):
-            cpu_model = val
+        if cpu_data not in (None, "", "N/A"):
+            cpu_model = cpu_data
 
     if inxi:
         inxi_info = get_inxi_main_cat("#CPU")
@@ -813,7 +828,7 @@ def get_audio_info():
 def get_disks_metrics():
     """Returns metrics about the disks and partitions containing the root and /home mounts."""
 
-    def traverse(block, results, min_size, is_crypt):
+    def traverse(block, metrics_data, min_size, is_crypt):
         is_crypt = (
                 is_crypt
                 or block.get("type") == "crypt"
@@ -833,19 +848,19 @@ def get_disks_metrics():
             has_root = False
 
             if "/" in block["mountpoints"]:
-                results["root"] = get_mount_data()
+                metrics_data["root"] = get_mount_data()
                 has_root = True
 
             if "/home" in block["mountpoints"]:
                 data = get_mount_data()
                 if has_root:
                     data["subvol"] = True
-                results["home"] = data
+                metrics_data["home"] = data
 
         # If it's a disk with children, traverse each child
         if "children" in block:
             for child in block["children"]:
-                traverse(child, results, min_size, is_crypt)
+                traverse(child, metrics_data, min_size, is_crypt)
 
     disks = []
     lsblk_data = json.loads(
@@ -932,7 +947,7 @@ def get_pacman_mirrors_info():
 
 def get_package_info():
     logging.info("...get package info")
-
+    output = None
     try:
         output = get_command_output(
             'grep -a "\\[ALPM\\] upgraded" /var/log/pacman.log | tail -1'
