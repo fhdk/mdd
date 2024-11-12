@@ -262,24 +262,24 @@ def generate_service_files():
                        f"After=network-online.target default.target\n\n" \
                        f"[Service]\n" \
                        f"Type=oneshot\n" \
-                       f"ExecStart=/usr/bin/mdd {disable_telemetry}\n\n"
+                       f"ExecStart=/usr/bin/mdd --quit {disable_telemetry}\n\n"
     # write user service unit
-    with open(f"{service_path}/self.service", "w") as f:
+    with open(f"{service_path}/mdd.service", "w") as f:
         f.write(service_template)
     # writ user timer
-    with open(f"{service_path}/self.timer", "w") as f:
+    with open(f"{service_path}/mdd.timer", "w") as f:
         f.write(timer_template)
 
 
 def set_timer_state(enable: bool):
     if enable:
-        get_command_output("systemctl --user enable self.timer")
+        get_command_output("systemctl --user enable mdd.timer")
         return
-    get_command_output("systemctl --user disable self.timer")
+    get_command_output("systemctl --user disable mdd.timer")
 
 
 def write_config():
-    config_file = f"{os.path.expanduser("~")}/.config/self.conf"
+    config_file = f"{os.path.expanduser("~")}/.config/mdd.conf"
     if write_config:
         with open(config_file, "w") as f:
             json.dump(config, f)
@@ -287,7 +287,7 @@ def write_config():
 
 
 def read_config():
-    config_file = f"{os.path.expanduser("~")}/.config/self.conf"
+    config_file = f"{os.path.expanduser("~")}/.config/mdd.conf"
     if os.path.exists(config_file):
         with open(config_file, "r") as f:
             return json.load(f)
@@ -916,7 +916,7 @@ def get_pacman_mirrors_info():
 
     try:
         country_config = get_command_output("pacman-mirrors --country-config")
-        output = get_command_output("pacman-mirrors --status")
+        # output = get_command_output("pacman-mirrors --status")
 
         # Initialize counters for total and OK mirrors
         total_mirrors = 0
@@ -1085,6 +1085,12 @@ def main():
         dest="gui",
         help="Set options using GUI"
     )
+    parser.add_argument(
+        "-q", "--quiet",
+        action="store_true",
+        dest="quiet",
+        help="Silense all output - useful for scripting"
+    )
     args = parser.parse_args()
 
     logging.basicConfig(
@@ -1111,38 +1117,46 @@ def main():
         sys.exit(app.exec())
 
     else:
-        print(f"{BOLD}{HEADER}Welcome to MDD - The Manjaro Data Donor{ENDC}")
-        print(f"{OKBLUE}Preparing data submission...{ENDC}")
-
-        if os.getenv("MDD_DISABLE_INXI"):
-            logging.info(f"Skipping inxi because MDD_DISABLE_INXI was set.")
-        else:
-            prepare_inxi()
-
-        data = get_device_data(args.telemetry)
-
-        separator = f"{BOLD}{HEADER}{'-' * 42}{ENDC}"
-        print("\n" + separator)
-
-        if args.dry_run:
-            print(" " * 1 + f"{BOLD}Would send the following data (dry run){ENDC}")
-        else:
-            print(" " * 8 + f"{BOLD}Sending the following data{ENDC}")
-
-        print(separator)
-        print(json_beaut(data))
-        print(separator + "\n")
-
-        if args.dry_run:
-            print("Note: Skipping data submission because of dry run.")
-            return
-
-        else:
-            success = http_post_info(data)
-            if success:
-                print("Succesful sent at", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-            else:
+        if args.quiet:
+            if not os.getenv("MDD_DISABLE_INXI"):
+                prepare_inxi()
+            data = get_device_data(args.telemetry)
+            if not http_post_info(data):
                 exit(1)
+            exit(0)
+
+    print(f"{BOLD}{HEADER}Welcome to MDD - The Manjaro Data Donor{ENDC}")
+    print(f"{OKBLUE}Preparing data submission...{ENDC}")
+
+    if os.getenv("MDD_DISABLE_INXI"):
+        logging.info(f"Skipping inxi because MDD_DISABLE_INXI was set.")
+    else:
+        prepare_inxi()
+
+    data = get_device_data(args.telemetry)
+
+    separator = f"{BOLD}{HEADER}{'-' * 42}{ENDC}"
+    print("\n" + separator)
+
+    if args.dry_run:
+        print(" " * 1 + f"{BOLD}Would send the following data (dry run){ENDC}")
+    else:
+        print(" " * 8 + f"{BOLD}Sending the following data{ENDC}")
+
+    print(separator)
+    print(json_beaut(data))
+    print(separator + "\n")
+
+    if args.dry_run:
+        print("Note: Skipping data submission because of dry run.")
+        return
+
+    else:
+        success = http_post_info(data)
+        if success:
+            print("Succesful sent at", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+        else:
+            exit(1)
 
 
 if __name__ == "__main__":
