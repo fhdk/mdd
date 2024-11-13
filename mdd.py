@@ -7,6 +7,7 @@
 import os
 import sys
 import uuid
+from json import JSONDecodeError
 from os import write
 
 import psutil
@@ -150,13 +151,6 @@ class MDD(QtWidgets.QWidget):
 
     def set_config(self, new_config):
         config.update(new_config)
-        self.config_modified = True
-        if config["schedule"] == "1d":
-            self.optionWeekly.setChecked(True)
-        if config["schedule"] == "1w":
-            self.optionWeekly.setChecked(True)
-        if config["enabled"]:
-            self.checkRegular.setChecked(True)
         try:
             self.first_run = config["first_run"]
         except KeyError:
@@ -168,6 +162,14 @@ class MDD(QtWidgets.QWidget):
             self.labelFirstDonation.setAlignment(Qt.AlignmentFlag.AlignCenter)
             self.labelFirstDonation.setText(u"<html><head/><body><p><span style=\" font-size:12pt;\">First Time Donation System Info</span></p></body></html>")
             self.labelFirstDonation.setVisible(True)
+
+        self.config_modified = True
+        if config["schedule"] == "1d":
+            self.optionWeekly.setChecked(True)
+        if config["schedule"] == "1w":
+            self.optionWeekly.setChecked(True)
+        if config["enabled"]:
+            self.checkRegular.setChecked(True)
 
 
         self.previewDonation.setPlainText("Stand by... working")
@@ -282,12 +284,16 @@ def write_config():
 
 
 def read_config():
+    default_config = config
     config_file = f"{os.path.expanduser("~")}/.config/mdd.conf"
     if os.path.exists(config_file):
         with open(config_file, "r") as f:
-            return json.load(f)
+            try:
+                return json.load(f)
+            except JSONDecodeError:
+                return default_config
     else:
-        return {"telemetry": True, "schedule": "1w", "enabled": True}
+        return default_config
 
 
 def http_post_info(sys_info) -> bool:
