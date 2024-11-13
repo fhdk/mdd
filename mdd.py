@@ -44,14 +44,15 @@ inxi = None
 config = {
     "telemetry": True,
     "enabled": False,
-    "schedule": "1w"
+    "schedule": "1w",
+    "first_run": True
 }
 
 
 class MDD(QtWidgets.QWidget):
     global inxi
     sysdata = None
-    first_run = True
+    firstDonation = None
     def __init__(self):
         super().__init__()
         self.config_modified = False
@@ -66,7 +67,7 @@ class MDD(QtWidgets.QWidget):
         self.buttonBox.setObjectName(u"buttonBox")
         self.buttonBox.setGeometry(QRect(230, 520, 260, 32))
         self.buttonBox.setOrientation(Qt.Orientation.Horizontal)
-        self.buttonBox.setStandardButtons(QDialogButtonBox.StandardButton.Cancel|QDialogButtonBox.StandardButton.Ok)
+        self.buttonBox.setStandardButtons(QDialogButtonBox.StandardButton.Cancel | QDialogButtonBox.StandardButton.Ok)
         self.previewDonation = QPlainTextEdit(self)
         self.previewDonation.setObjectName(u"previewDonation")
         self.previewDonation.setGeometry(QRect(10, 10, 480, 380))
@@ -129,7 +130,7 @@ class MDD(QtWidgets.QWidget):
         self.labelFirstDonation = QLabel(self)
 
         # set text (this is candidate for translation
-        self.checkRegular.setText(u"Recurring Donation")
+        self.checkRegular.setText(u"Recurring Donation Tick")
         self.optionDaily.setText(u"Daily")
         self.optionWeekly.setText(u"Weekly")
         self.labelTimerOptions.setText(
@@ -138,46 +139,17 @@ class MDD(QtWidgets.QWidget):
         self.labelServiceOptions.setText(
             u"<html><head/><body><p><span style=\" font-size:11pt; font-weight:700;\">Donate Info</span></p></body></html>")
         self.optionBasic.setText(u"&Basic Ping")
+
         self.buttonBox.accepted.connect(self.accepted)
         self.buttonBox.rejected.connect(self.rejected)
         self.checkRegular.clicked.connect(self.enable_service)
-        self.optionBasic.clicked.connect(self.opt_system_ping_set)
         self.optionDaily.clicked.connect(self.opt_daily_set)
-        self.optionFull.clicked.connect(self.opt_system_info_set)
         self.optionWeekly.clicked.connect(self.opt_weekly_set)
 
+        self.optionBasic.clicked.connect(self.opt_system_ping_set)
+        self.optionFull.clicked.connect(self.opt_system_info_set)
+
         self.sysdata = get_device_data(config["telemetry"])
-        self.previewDonation.setPlainText(json_beaut(self.sysdata, indent=2))
-
-    def set_config(self, new_config):
-        config.update(new_config)
-        try:
-            self.first_run = config["first_run"]
-        except KeyError:
-            config["first_run"] = False
-            self.resize(500, 600)
-            self.labelFirstDonation.setObjectName(u"labelFirstDonation")
-            self.labelFirstDonation.setGeometry(QRect(0, 570, 500, 30))
-            self.labelFirstDonation.setTextFormat(Qt.TextFormat.RichText)
-            self.labelFirstDonation.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            self.labelFirstDonation.setText(u"<html><head/><body><p><span style=\" font-size:12pt;\">First Time Donation System Info</span></p></body></html>")
-            self.labelFirstDonation.setVisible(True)
-
-        self.config_modified = True
-        if config["schedule"] == "1d":
-            self.optionWeekly.setChecked(True)
-        if config["schedule"] == "1w":
-            self.optionWeekly.setChecked(True)
-        if config["enabled"]:
-            self.checkRegular.setChecked(True)
-
-
-        self.previewDonation.setPlainText("Stand by... working")
-        self.previewDonation.repaint()
-        # self.optionBasic.setChecked(not config["telemetry"])
-        self.optionFull.setChecked(config["telemetry"])
-
-        self.sysdata = get_device_data(new_config)
         self.previewDonation.setPlainText(json_beaut(self.sysdata, indent=2))
 
     @staticmethod
@@ -204,7 +176,9 @@ class MDD(QtWidgets.QWidget):
 
     @QtCore.Slot()
     def accepted(self):
-        if self.sysdata is not None:
+        if self.firstDonation is not None:
+            http_post_info(self.firstDonation)
+        else:
             http_post_info(self.sysdata)
         if self.config_modified:
             write_config()
@@ -212,10 +186,6 @@ class MDD(QtWidgets.QWidget):
 
     @QtCore.Slot()
     def opt_system_ping_set(self):
-        if self.first_run:
-            self.optionBasic.setEnabled(False)
-            self.optionWeekly.setChecked(True)
-            return
         self.previewDonation.clear()
         self.previewDonation.setPlainText("Stand by... working")
         self.previewDonation.repaint()
@@ -238,6 +208,37 @@ class MDD(QtWidgets.QWidget):
         self.previewDonation.setPlainText(json_beaut(self.sysdata, indent=2))
         generate_service_files()
 
+    def set_config(self, local_conf):
+        config.update(local_conf)
+        if config["first_run"]:
+            self.firstDonation = self.sysdata
+            self.resize(500, 600)
+            self.optionFull.setEnabled(False)
+            self.optionBasic.setEnabled(False)
+            self.labelFirstDonation.setObjectName(u"labelFirstDonation")
+            self.labelFirstDonation.setGeometry(QRect(0, 570, 500, 30))
+            self.labelFirstDonation.setTextFormat(Qt.TextFormat.RichText)
+            self.labelFirstDonation.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.labelFirstDonation.setText(
+                u"<html><head/><body><p><span style=\" font-size:12pt;\">Requesting System Info on First Time Donation</span></p></body></html>")
+            self.labelFirstDonation.setVisible(True)
+            config["first_run"] = False
+
+        self.config_modified = True
+        if config["schedule"] == "1d":
+            self.optionWeekly.setChecked(True)
+        if config["schedule"] == "1w":
+            self.optionWeekly.setChecked(True)
+        if config["enabled"]:
+            self.checkRegular.setChecked(True)
+
+        self.previewDonation.setPlainText("Stand by... working")
+        self.previewDonation.repaint()
+        self.optionFull.setChecked(config["telemetry"])
+
+        self.sysdata = get_device_data(local_conf)
+        self.previewDonation.setPlainText(json_beaut(self.sysdata, indent=2))
+
 
 def generate_service_files():
     service_path = f"{os.path.expanduser("~")}/.config/systemd/user"
@@ -259,11 +260,11 @@ def generate_service_files():
                        f"After=network-online.target default.target\n\n" \
                        f"[Service]\n" \
                        f"Type=oneshot\n" \
-                       f"ExecStart=/usr/bin/mdd --quit {disable_telemetry}\n\n"
+                       f"ExecStart=/usr/bin/mdd --quiet {disable_telemetry}\n\n"
     # write user service unit
     with open(f"{service_path}/mdd.service", "w") as f:
         f.write(service_template)
-    # writ user timer
+    # write user timer
     with open(f"{service_path}/mdd.timer", "w") as f:
         f.write(timer_template)
 
