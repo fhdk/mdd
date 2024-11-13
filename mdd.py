@@ -25,18 +25,18 @@ import distro
 from datetime import datetime
 from dateutil import parser as date_parser
 
-from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
-    QMetaObject, QObject, QPoint, QRect,
-    QSize, QTime, QUrl, Qt)
-from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
-    QFont, QFontDatabase, QGradient, QIcon,
-    QImage, QKeySequence, QLinearGradient, QPainter,
-    QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QAbstractButton, QAbstractScrollArea, QApplication, QCheckBox,
-    QDialog, QDialogButtonBox, QLabel, QRadioButton,
-    QSizePolicy, QTextBrowser, QPlainTextEdit, QTextEdit, QVBoxLayout,
-    QWidget)
-from PySide6 import QtCore, QtWidgets
+GUI = True
+try:
+    import PySide6
+except ImportError:
+    GUI = False
+
+if GUI:
+    from PySide6 import QtCore, QtWidgets
+    from PySide6.QtCore import (QRect, Qt)
+    from PySide6.QtGui import (QFont, )
+    from PySide6.QtWidgets import (QAbstractScrollArea, QCheckBox, QDialogButtonBox, QLabel, QRadioButton,
+                                   QSizePolicy, QPlainTextEdit, QVBoxLayout, QWidget)
 
 inxi = None
 
@@ -44,6 +44,7 @@ config = {
     "telemetry": True,
     "enabled": False,
     "schedule": "1w",
+    "first_run": True,
 }
 
 
@@ -54,7 +55,7 @@ class MDD(QtWidgets.QWidget):
     def __init__(self):
         super().__init__()
         self.config_modified = False
-        self.setWindowTitle("MDD - The Manjaro Data Donor")
+        self.setWindowTitle("Manjaro Data Donor")
         self.resize(500, 600)
         size_policy = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         size_policy.setHorizontalStretch(0)
@@ -63,10 +64,9 @@ class MDD(QtWidgets.QWidget):
         self.setSizePolicy(size_policy)
         self.buttonBox = QDialogButtonBox(self)
         self.buttonBox.setObjectName(u"buttonBox")
-        self.buttonBox.setGeometry(QRect(150, 560, 341, 32))
+        self.buttonBox.setGeometry(QRect(230, 520, 260, 32))
         self.buttonBox.setOrientation(Qt.Orientation.Horizontal)
         self.buttonBox.setStandardButtons(QDialogButtonBox.StandardButton.Cancel|QDialogButtonBox.StandardButton.Ok)
-
         self.previewDonation = QPlainTextEdit(self)
         self.previewDonation.setObjectName(u"previewDonation")
         self.previewDonation.setGeometry(QRect(10, 10, 480, 380))
@@ -76,64 +76,60 @@ class MDD(QtWidgets.QWidget):
         self.previewDonation.setAcceptDrops(False)
         self.previewDonation.setSizeAdjustPolicy(QAbstractScrollArea.SizeAdjustPolicy.AdjustToContentsOnFirstShow)
         self.previewDonation.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
-
-        self.widgetConfigTimer = QWidget(self)
-        self.widgetConfigTimer.setObjectName(u"widgetConfigTimer")
-        self.widgetConfigTimer.setGeometry(QRect(10, 430, 220, 140))
-        self.layoutConfigTimer = QVBoxLayout(self.widgetConfigTimer)
+        self.verticalLayoutWidget = QWidget(self)
+        self.verticalLayoutWidget.setObjectName(u"verticalLayoutWidget")
+        self.verticalLayoutWidget.setGeometry(QRect(10, 430, 220, 81))
+        self.layoutConfigTimer = QVBoxLayout(self.verticalLayoutWidget)
         self.layoutConfigTimer.setObjectName(u"layoutConfigTimer")
         self.layoutConfigTimer.setContentsMargins(10, 10, 10, 10)
-        self.optionDaily = QRadioButton(self.widgetConfigTimer)
+        self.optionDaily = QRadioButton(self.verticalLayoutWidget)
         self.optionDaily.setObjectName(u"optionDaily")
+        self.optionDaily.setChecked(True)
 
         self.layoutConfigTimer.addWidget(self.optionDaily)
 
-        self.optionWeekly = QRadioButton(self.widgetConfigTimer)
+        self.optionWeekly = QRadioButton(self.verticalLayoutWidget)
         self.optionWeekly.setObjectName(u"optionWeekly")
+        self.optionWeekly.setChecked(False)
 
         self.layoutConfigTimer.addWidget(self.optionWeekly)
 
-        self.optionBiweekly = QRadioButton(self.widgetConfigTimer)
-        self.optionBiweekly.setObjectName(u"optionBiweekly")
-
-        self.layoutConfigTimer.addWidget(self.optionBiweekly)
-
-        self.optionMonthly = QRadioButton(self.widgetConfigTimer)
-        self.optionMonthly.setObjectName(u"optionMonthly")
-
-        self.layoutConfigTimer.addWidget(self.optionMonthly)
-
-        self.widgetConfigData = QWidget(self)
-        self.widgetConfigData.setObjectName(u"widgetConfigData")
-        self.widgetConfigData.setGeometry(QRect(290, 430, 200, 80))
-        self.layoutConfigData = QVBoxLayout(self.widgetConfigData)
+        self.verticalLayoutWidget_2 = QWidget(self)
+        self.verticalLayoutWidget_2.setObjectName(u"verticalLayoutWidget_2")
+        self.verticalLayoutWidget_2.setGeometry(QRect(290, 430, 200, 80))
+        self.layoutConfigData = QVBoxLayout(self.verticalLayoutWidget_2)
         self.layoutConfigData.setObjectName(u"layoutConfigData")
         self.layoutConfigData.setContentsMargins(10, 10, 10, 10)
-        self.optionBasic = QRadioButton(self.widgetConfigData)
+        self.optionBasic = QRadioButton(self.verticalLayoutWidget_2)
         self.optionBasic.setObjectName(u"optionBasic")
 
         self.layoutConfigData.addWidget(self.optionBasic)
 
-        self.optionFull = QRadioButton(self.widgetConfigData)
+        self.optionFull = QRadioButton(self.verticalLayoutWidget_2)
         self.optionFull.setObjectName(u"optionFull")
+        self.optionFull.setChecked(True)
 
         self.layoutConfigData.addWidget(self.optionFull)
 
         self.checkRegular = QCheckBox(self)
         self.checkRegular.setObjectName(u"checkRegular")
-        self.checkRegular.setGeometry(QRect(300, 520, 190, 23))
+        self.checkRegular.setGeometry(QRect(20, 520, 200, 30))
+        font1 = QFont()
+        font1.setPointSize(11)
+        font1.setBold(True)
+        self.checkRegular.setFont(font1)
+        self.checkRegular.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
         self.labelTimerOptions = QLabel(self)
         self.labelTimerOptions.setObjectName(u"labelTimerOptions")
         self.labelTimerOptions.setGeometry(QRect(10, 400, 200, 19))
         self.labelServiceOptions = QLabel(self)
         self.labelServiceOptions.setObjectName(u"labelServiceOptions")
         self.labelServiceOptions.setGeometry(QRect(290, 400, 200, 19))
+
         # set text (this is candidate for translation
         self.checkRegular.setText(u"Recurring Donation")
         self.optionDaily.setText(u"Daily")
         self.optionWeekly.setText(u"Weekly")
-        self.optionBiweekly.setText(u"Biweek&ly")
-        self.optionMonthly.setText(u"Mon&thly")
         self.labelTimerOptions.setText(
             u"<html><head/><body><p><span style=\" font-size:11pt; font-weight:700;\">Donate Timer</span></p></body></html>")
         self.optionFull.setText(u"S&ystem Info")
@@ -144,10 +140,8 @@ class MDD(QtWidgets.QWidget):
         self.buttonBox.accepted.connect(self.accepted)
         self.buttonBox.rejected.connect(self.rejected)
         self.checkRegular.clicked.connect(self.enable_service)
-        self.optionBiweekly.clicked.connect(self.opt_biweekly_set)
-        self.optionDaily.clicked.connect(self.opt_daily_set)
-        self.optionMonthly.clicked.connect(self.opt_monthly_set)
         self.optionBasic.clicked.connect(self.opt_system_ping_set)
+        self.optionDaily.clicked.connect(self.opt_daily_set)
         self.optionFull.clicked.connect(self.opt_system_info_set)
         self.optionWeekly.clicked.connect(self.opt_weekly_set)
 
@@ -161,16 +155,12 @@ class MDD(QtWidgets.QWidget):
             self.optionWeekly.setChecked(True)
         if config["schedule"] == "1w":
             self.optionWeekly.setChecked(True)
-        if config["schedule"] == "2w":
-            self.optionBiweekly.setChecked(True)
-        if config["schedule"] == "4w":
-            self.optionMonthly.setChecked(True)
         if config["enabled"]:
             self.checkRegular.setChecked(True)
 
         self.previewDonation.setPlainText("Stand by... working")
         self.previewDonation.repaint()
-        self.optionBasic.setChecked(not config["telemetry"])
+        # self.optionBasic.setChecked(not config["telemetry"])
         self.optionFull.setChecked(config["telemetry"])
 
         self.sysdata = get_device_data(new_config)
@@ -212,6 +202,8 @@ class MDD(QtWidgets.QWidget):
 
     @QtCore.Slot()
     def accepted(self):
+        if config["first_run"]:
+           self.sysdata = get_device_data(True)
         if self.sysdata is not None:
             http_post_info(self.sysdata)
         if self.config_modified:
@@ -1100,31 +1092,32 @@ def main():
         datefmt="%Y-%m-%dT%H:%M:%S",
     )
 
-    if args.gui:
+    if GUI:
+        if args.gui:
 
-        # initialize from configuration file
-        config.update(read_config())
-        config["telemetry"] = args.telemetry
+            # initialize from configuration file
+            config.update(read_config())
+            config["telemetry"] = args.telemetry
 
-        if os.getenv("MDD_DISABLE_INXI"):
-            logging.info(f"Skipping inxi because MDD_DISABLE_INXI was set.")
-        else:
-            prepare_inxi()
-
-        app = QtWidgets.QApplication(sys.argv)
-        widget = MDD()
-        widget.set_config(config)
-        widget.show()
-        sys.exit(app.exec())
-
-    else:
-        if args.quiet:
-            if not os.getenv("MDD_DISABLE_INXI"):
+            if os.getenv("MDD_DISABLE_INXI"):
+                logging.info(f"Skipping inxi because MDD_DISABLE_INXI was set.")
+            else:
                 prepare_inxi()
-            data = get_device_data(args.telemetry)
-            if not http_post_info(data):
-                exit(1)
-            exit(0)
+
+            app = QtWidgets.QApplication(sys.argv)
+            widget = MDD()
+            widget.set_config(config)
+            widget.show()
+            sys.exit(app.exec())
+
+        else:
+            if args.quiet:
+                if not os.getenv("MDD_DISABLE_INXI"):
+                    prepare_inxi()
+                data = get_device_data(args.telemetry)
+                if not http_post_info(data):
+                    exit(1)
+                exit(0)
 
     print(f"{BOLD}{HEADER}Welcome to MDD - The Manjaro Data Donor{ENDC}")
     print(f"{OKBLUE}Preparing data submission...{ENDC}")

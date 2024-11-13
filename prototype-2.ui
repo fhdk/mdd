@@ -257,6 +257,12 @@
      <height>30</height>
     </rect>
    </property>
+   <property name="font">
+    <font>
+     <pointsize>11</pointsize>
+     <bold>true</bold>
+    </font>
+   </property>
    <property name="layoutDirection">
     <enum>Qt::LayoutDirection::RightToLeft</enum>
    </property>
