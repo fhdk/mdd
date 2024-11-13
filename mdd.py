@@ -43,20 +43,19 @@ inxi = None
 config = {
     "telemetry": True,
     "enabled": False,
-    "schedule": "1w",
-    "first_run": True,
+    "schedule": "1w"
 }
 
 
 class MDD(QtWidgets.QWidget):
     global inxi
     sysdata = None
-
+    first_run = True
     def __init__(self):
         super().__init__()
         self.config_modified = False
         self.setWindowTitle("Manjaro Data Donor")
-        self.resize(500, 600)
+        self.resize(500, 570)
         size_policy = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         size_policy.setHorizontalStretch(0)
         size_policy.setVerticalStretch(0)
@@ -126,6 +125,8 @@ class MDD(QtWidgets.QWidget):
         self.labelServiceOptions.setObjectName(u"labelServiceOptions")
         self.labelServiceOptions.setGeometry(QRect(290, 400, 200, 19))
 
+        self.labelFirstDonation = QLabel(self)
+
         # set text (this is candidate for translation
         self.checkRegular.setText(u"Recurring Donation")
         self.optionDaily.setText(u"Daily")
@@ -136,7 +137,6 @@ class MDD(QtWidgets.QWidget):
         self.labelServiceOptions.setText(
             u"<html><head/><body><p><span style=\" font-size:11pt; font-weight:700;\">Donate Info</span></p></body></html>")
         self.optionBasic.setText(u"&Basic Ping")
-
         self.buttonBox.accepted.connect(self.accepted)
         self.buttonBox.rejected.connect(self.rejected)
         self.checkRegular.clicked.connect(self.enable_service)
@@ -157,6 +157,18 @@ class MDD(QtWidgets.QWidget):
             self.optionWeekly.setChecked(True)
         if config["enabled"]:
             self.checkRegular.setChecked(True)
+        try:
+            self.first_run = config["first_run"]
+        except KeyError:
+            config["first_run"] = False
+            self.resize(500, 600)
+            self.labelFirstDonation.setObjectName(u"labelFirstDonation")
+            self.labelFirstDonation.setGeometry(QRect(0, 570, 500, 30))
+            self.labelFirstDonation.setTextFormat(Qt.TextFormat.RichText)
+            self.labelFirstDonation.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.labelFirstDonation.setText(u"<html><head/><body><p><span style=\" font-size:12pt;\">First Time Donation System Info</span></p></body></html>")
+            self.labelFirstDonation.setVisible(True)
+
 
         self.previewDonation.setPlainText("Stand by... working")
         self.previewDonation.repaint()
@@ -183,18 +195,6 @@ class MDD(QtWidgets.QWidget):
         self.config_modified = True
 
     @QtCore.Slot()
-    def opt_biweekly_set(self):
-        config["schedule"] = "2w"
-        generate_service_files()
-        self.config_modified = True
-
-    @QtCore.Slot()
-    def opt_monthly_set(self):
-        config["schedule"] = "4w"
-        generate_service_files()
-        self.config_modified = True
-
-    @QtCore.Slot()
     def enable_service(self):
         config["enabled"] = self.checkRegular.isChecked()
         set_timer_state(config["enabled"])
@@ -202,8 +202,6 @@ class MDD(QtWidgets.QWidget):
 
     @QtCore.Slot()
     def accepted(self):
-        if config["first_run"]:
-           self.sysdata = get_device_data(True)
         if self.sysdata is not None:
             http_post_info(self.sysdata)
         if self.config_modified:
@@ -212,6 +210,10 @@ class MDD(QtWidgets.QWidget):
 
     @QtCore.Slot()
     def opt_system_ping_set(self):
+        if self.first_run:
+            self.optionBasic.setEnabled(False)
+            self.optionWeekly.setChecked(True)
+            return
         self.previewDonation.clear()
         self.previewDonation.setPlainText("Stand by... working")
         self.previewDonation.repaint()

@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>500</width>
-    <height>565</height>
+    <height>571</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -23,7 +23,7 @@
    <property name="geometry">
     <rect>
      <x>230</x>
-     <y>520</y>
+     <y>530</y>
      <width>260</width>
      <height>32</height>
     </rect>
@@ -38,9 +38,9 @@
   <widget class="QPlainTextEdit" name="previewDonation">
    <property name="geometry">
     <rect>
-     <x>10</x>
+     <x>0</x>
      <y>10</y>
-     <width>480</width>
+     <width>500</width>
      <height>380</height>
     </rect>
    </property>
@@ -167,7 +167,7 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>430</y>
+     <y>440</y>
      <width>220</width>
      <height>81</height>
     </rect>
@@ -211,7 +211,7 @@
    <property name="geometry">
     <rect>
      <x>290</x>
-     <y>430</y>
+     <y>440</y>
      <width>200</width>
      <height>80</height>
     </rect>
@@ -251,9 +251,9 @@
   <widget class="QCheckBox" name="checkRegular">
    <property name="geometry">
     <rect>
-     <x>20</x>
-     <y>520</y>
-     <width>200</width>
+     <x>10</x>
+     <y>530</y>
+     <width>220</width>
      <height>30</height>
     </rect>
    </property>
@@ -276,7 +276,7 @@
      <x>10</x>
      <y>400</y>
      <width>200</width>
-     <height>19</height>
+     <height>30</height>
     </rect>
    </property>
    <property name="text">
@@ -289,7 +289,7 @@
      <x>290</x>
      <y>400</y>
      <width>200</width>
-     <height>19</height>
+     <height>30</height>
     </rect>
    </property>
    <property name="text">
