@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-
+# data collection and submit
 # SPDX-FileCopyrightText: 2024 Roman Gilg <romangg@manjaro.org>
+# GUI
 # SPDX-FileCopyrightText: 2024 Frede Hundewadt <fh@manjaro.org>
 # SPDX-License-Identifier: MIT
 import os
@@ -55,11 +56,11 @@ class MDD(QtWidgets.QWidget):
         self.config_modified = False
         self.setWindowTitle("MDD - The Manjaro Data Donor")
         self.resize(500, 600)
-        sizePolicy = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.sizePolicy().hasHeightForWidth())
-        self.setSizePolicy(sizePolicy)
+        size_policy = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        size_policy.setHorizontalStretch(0)
+        size_policy.setVerticalStretch(0)
+        size_policy.setHeightForWidth(self.sizePolicy().hasHeightForWidth())
+        self.setSizePolicy(size_policy)
         self.buttonBox = QDialogButtonBox(self)
         self.buttonBox.setObjectName(u"buttonBox")
         self.buttonBox.setGeometry(QRect(150, 560, 341, 32))
@@ -128,7 +129,7 @@ class MDD(QtWidgets.QWidget):
         self.labelServiceOptions.setObjectName(u"labelServiceOptions")
         self.labelServiceOptions.setGeometry(QRect(290, 400, 200, 19))
         # set text (this is candidate for translation
-        self.checkRegular.setText(u"Enable Timer")
+        self.checkRegular.setText(u"Recurring Donation")
         self.optionDaily.setText(u"Daily")
         self.optionWeekly.setText(u"Weekly")
         self.optionBiweekly.setText(u"Biweek&ly")

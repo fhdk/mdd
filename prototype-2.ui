@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>500</width>
-    <height>600</height>
+    <height>565</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -22,9 +22,9 @@
   <widget class="QDialogButtonBox" name="buttonBox">
    <property name="geometry">
     <rect>
-     <x>150</x>
-     <y>560</y>
-     <width>341</width>
+     <x>230</x>
+     <y>520</y>
+     <width>260</width>
      <height>32</height>
     </rect>
    </property>
@@ -169,7 +169,7 @@
      <x>10</x>
      <y>430</y>
      <width>220</width>
-     <height>140</height>
+     <height>81</height>
     </rect>
    </property>
    <layout class="QVBoxLayout" name="layoutConfigTimer">
@@ -202,20 +202,6 @@
       </property>
       <property name="checked">
        <bool>false</bool>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QRadioButton" name="optionBiweekly">
-      <property name="text">
-       <string>Biweekly</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QRadioButton" name="optionMonthly">
-      <property name="text">
-       <string>Mon&amp;thly</string>
       </property>
      </widget>
     </item>
@@ -253,7 +239,7 @@
     <item>
      <widget class="QRadioButton" name="optionFull">
       <property name="text">
-       <string>System Info</string>
+       <string>Sys&amp;tem Info</string>
       </property>
       <property name="checked">
        <bool>true</bool>
@@ -265,14 +251,17 @@
   <widget class="QCheckBox" name="checkRegular">
    <property name="geometry">
     <rect>
-     <x>300</x>
+     <x>20</x>
      <y>520</y>
-     <width>190</width>
-     <height>23</height>
+     <width>200</width>
+     <height>30</height>
     </rect>
    </property>
+   <property name="layoutDirection">
+    <enum>Qt::LayoutDirection::RightToLeft</enum>
+   </property>
    <property name="text">
-    <string>Regular Donation</string>
+    <string>Recurring Donation</string>
    </property>
   </widget>
   <widget class="QLabel" name="labelTimerOptions">
