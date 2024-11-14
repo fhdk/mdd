@@ -70,3 +70,32 @@ By default MDD tries to use [inxi](https://smxi.org/docs/inxi.htm) for gathering
 ```bash
 MDD_DISABLE_INXI=1 python mdd.py
 ```
+
+## GUI
+Higher frequency and more data makes the most reliable picture.
+
+Protyped GUI to display a preview of the data collection.
+
+The option reflects
+
+- a basic collection - equals to using the --disable-telemetry flag
+- a sysinfo collection - the default
+
+If you were to make a financial donation you would have options to do so as a onetime, monthly or yearly donation so I created something simliar to that *daily*, *weekly*, *bi-weekly*, *monthly*. Finally a check box for a regular donation your system info.
+
+The idea is that the script will create a set of systemd user unit files when you click the options.
+
+- a service which reflects the type of donation
+- a time which reflects the schedule of donating the info
+
+When you tick the Regular Donation check box the generated user timer will be enabled with the selected schedule.
+
+When user click OK - user is making a one time donation. 
+
+With a first time donation, we request the sysinfo as this is the only way to understand the hardware landscape in userland.
+
+What has been selected is saved to the user's .config folder and is preloaded when opening the GUI next time.
+
+The prototyped layout looks like this.
+
+![](prototype.png)

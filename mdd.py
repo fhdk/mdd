@@ -213,14 +213,12 @@ class MDD(QtWidgets.QWidget):
         if config["first_run"]:
             self.firstDonation = self.sysdata
             self.resize(500, 600)
-            self.optionFull.setEnabled(False)
-            self.optionBasic.setEnabled(False)
             self.labelFirstDonation.setObjectName(u"labelFirstDonation")
             self.labelFirstDonation.setGeometry(QRect(0, 570, 500, 30))
             self.labelFirstDonation.setTextFormat(Qt.TextFormat.RichText)
             self.labelFirstDonation.setAlignment(Qt.AlignmentFlag.AlignCenter)
             self.labelFirstDonation.setText(
-                u"<html><head/><body><p><span style=\" font-size:12pt;\">Requesting System Info on First Time Donation</span></p></body></html>")
+                u"<html><head/><body><p><span style=\" font-size:12pt;\">Sending System Info with First Time Donation</span></p></body></html>")
             self.labelFirstDonation.setVisible(True)
             config["first_run"] = False
 
