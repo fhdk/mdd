@@ -98,4 +98,8 @@ What has been selected is saved to the user's .config folder and is preloaded wh
 
 The prototyped layout looks like this.
 
-![](prototype.png)
+### 2 option schedule
+![](prototype-2.png)
+
+### 4 option schedule
+![](prototype-4.png)
