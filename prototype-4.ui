@@ -191,7 +191,7 @@
        <string>Dai&amp;ly</string>
       </property>
       <property name="checked">
-       <bool>true</bool>
+       <bool>false</bool>
       </property>
      </widget>
     </item>
@@ -201,7 +201,7 @@
        <string>Weekl&amp;y</string>
       </property>
       <property name="checked">
-       <bool>false</bool>
+       <bool>true</bool>
       </property>
      </widget>
     </item>
@@ -271,8 +271,14 @@
      <height>23</height>
     </rect>
    </property>
+   <property name="font">
+    <font>
+     <pointsize>11</pointsize>
+     <bold>true</bold>
+    </font>
+   </property>
    <property name="text">
-    <string>Regular Donation</string>
+    <string>Recurring Donation</string>
    </property>
   </widget>
   <widget class="QLabel" name="labelTimerOptions">
